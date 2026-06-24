@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Altametrics Growth - My Apps</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    background: #EEF0F5;
+    min-height: 100vh;
+  }
+
+  /* ── PAGE LOADER ── */
+  #pageLoader {
+    position: fixed;
+    inset: 0;
+    background: rgba(238, 240, 245, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.2s ease;
+  }
+  #pageLoader.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+  #pageLoader img {
+    width: 90px;
+    height: 90px;
+  }
+
+  /* ═══════════════════════════════════════════
+     1.  DARK TOP NAV  —  Logo only  +  Avatar
+  ═══════════════════════════════════════════ */
+  .top-nav {
+    background: #1B2236;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 22px;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+
+  .top-nav-logo img { height: 26px; display: block; }
+
+  .top-nav-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.35);
+    cursor: pointer;
+    background: #444;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .top-nav-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* ═══════════════════════════════════════════
+     2.  WHITE SUB-BAR  —  My Apps | Search | Icons
+  ═══════════════════════════════════════════ */
+  .sub-bar {
+    background: #fff;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    padding: 0 22px;
+    gap: 14px;
+    border-bottom: 1px solid #E2E5EA;
+    position: sticky;
+    top: 52px;
+    z-index: 199;
+  }
+
+  /* My Apps label — left */
+  .my-apps-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #3D8EE0;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .my-apps-btn svg { display: block; }
+
+  /* Search — centred, takes remaining space */
+  .sub-bar-search {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  .search-pill {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    height: 36px;
+    background: #F5F6F8;
+    border: 1.5px solid #D8DCE4;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px 0 14px;
+    gap: 8px;
+    transition: border-color 0.18s, background 0.18s;
+  }
+  .search-pill:focus-within {
+    background: #fff;
+    border-color: #4A90D9;
+    box-shadow: 0 0 0 3px rgba(74,144,217,0.12);
+  }
+
+  .s-icon { color: #9AA0AC; display: flex; flex-shrink: 0; }
+
+  .s-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 13.5px;
+    color: #333;
+    min-width: 0;
+  }
+  .s-input::placeholder { color: #B0B5C0; }
+
+  /* Apps | Menu toggle inside the pill */
+  .s-toggle {
+    display: flex;
+    align-items: center;
+    background: #E8EAEF;
+    border-radius: 20px;
+    height: 24px;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .s-tog {
+    padding: 0 10px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: #8A909C;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.16s, color 0.16s;
+    white-space: nowrap;
+  }
+  .s-tog.active {
+    background: #4A90D9;
+    color: #fff;
+    border-radius: 20px;
+  }
+
+  /* Menu-mode dropdown */
+  .s-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0; right: 0;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    border: 1px solid #E2E5EA;
+    overflow: hidden;
+    max-height: 320px;
+    transition: max-height 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 300;
+  }
+  .s-dropdown.open { display: block; }
+
+  /* Two-panel slide wrapper */
+  .sd-panels {
+    display: flex;
+    align-items: flex-start;
+    width: 200%;
+    transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sd-panels.show-sites { transform: translateX(-50%); }
+
+  .sd-panel {
+    width: 50%;
+    overflow-y: auto;
+    max-height: 320px;
+  }
+  .sd-panel::-webkit-scrollbar { width: 4px; }
+  .sd-panel::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 4px; }
+
+  /* ── Panel 1: Menu items ── */
+  .sd-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #F3F4F6;
+    transition: background 0.1s;
+  }
+  .sd-item:last-child { border-bottom: none; }
+  .sd-item:hover { background: #F7F8FB; }
+
+  .sd-dot {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sd-dot img { width: 18px; height: 18px; object-fit: contain; }
+
+  .sd-text { flex: 1; }
+  .sd-name { font-size: 13px; font-weight: 600; color: #222; }
+  .sd-app  { font-size: 11.5px; color: #999; margin-top: 1px; }
+  .sd-arr  { color: #ccc; font-size: 17px; line-height: 1; }
+
+  /* ── Panel 2: Sites drill-down ── */
+  .sd-sites-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #F0F0F0;
+    position: sticky; top: 0;
+    background: #fff;
+    z-index: 1;
+  }
+  .sd-back-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px;
+    border: none; background: #F0F2F5;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #555;
+    font-size: 15px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: background 0.14s;
+  }
+  .sd-back-btn:hover { background: #E2E5EA; }
+
+  .sd-sites-title { font-size: 12px; font-weight: 700; color: #333; flex: 1; }
+  .sd-sites-app   { font-size: 11px; color: #4A90D9; font-weight: 600; }
+
+  .sd-site-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #F5F5F5;
+    transition: background 0.1s;
+  }
+  .sd-site-item:last-child { border-bottom: none; }
+  .sd-site-item:hover { background: #F7F9FC; }
+
+  .sd-site-icon {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 1px solid #DEDEDE;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .sd-site-icon img { width: 12px; height: 12px; opacity: 0.5; }
+
+  .sd-site-name { font-size: 12px; font-weight: 600; color: #1a1a1a; line-height: 1.3; }
+  .sd-site-addr { font-size: 10.5px; color: #AAA; margin-top: 1px; }
+
+  .sd-sites-footer {
+    padding: 8px 10px 10px;
+    background: #fff;
+    position: sticky; bottom: 0;
+    border-top: 1px solid #F0F0F0;
+  }
+  .sd-sites-footer-btn {
+    display: block; width: 100%;
+    background: #3DBE8B;
+    border: none; outline: none;
+    padding: 9px;
+    text-align: center;
+    font-size: 12px; font-weight: 600;
+    font-family: inherit; color: #fff;
+    cursor: pointer;
+    border-radius: 20px;
+    transition: background 0.14s;
+  }
+  .sd-sites-footer-btn:hover { background: #33B07E; }
+
+  /* Right icons — right */
+  .sub-bar-icons {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .sb-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background 0.14s;
+    color: #666;
+  }
+  .sb-icon:hover { background: #F0F2F5; }
+
+  /* ═══════════════════════════════════════════
+     3.  CONTENT
+  ═══════════════════════════════════════════ */
+  .page { padding: 20px 26px 48px; }
+
+  .welcome-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 20px;
+  }
+  .welcome { font-size: 17px; color: #333; font-weight: 400; }
+  .welcome span { color: #4A90D9; font-weight: 700; }
+  .date-str { font-size: 13px; color: #999; }
+  .date-str b { color: #666; }
+
+  /* ═══════════════════════════════════════════
+     4.  APP GRID
+  ═══════════════════════════════════════════ */
+  .app-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 1280px) { .app-grid { grid-template-columns: repeat(7, 1fr); } }
+  @media (max-width: 960px)  { .app-grid { grid-template-columns: repeat(5, 1fr); } }
+  @media (max-width: 600px)  { .app-grid { grid-template-columns: repeat(3, 1fr); } }
+
+  .tile {
+    aspect-ratio: 1;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 10px 8px 12px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.14s, box-shadow 0.14s;
+  }
+  .tile:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(0,0,0,0.2); }
+  .tile.hidden { display: none; }
+
+  .tile-white {
+    background: #fff;
+    border: 1.5px solid #E2E5EA;
+    box-shadow: 0 2px 7px rgba(0,0,0,0.07);
+  }
+
+  .tile img.icon {
+    flex: 1;
+    width: 56%; max-width: 66px;
+    object-fit: contain;
+    min-height: 0;
+  }
+  .tile-white img.icon { width: 68%; max-width: 76px; }
+
+  .tile-name {
+    flex-shrink: 0;
+    font-size: 11px; font-weight: 700;
+    color: #fff; text-align: center; line-height: 1.3;
+    margin-top: 6px;
+  }
+  .tile-white .tile-name { color: #555; }
+
+  /* Ribbon badge */
+  .ribbon {
+    position: absolute;
+    top: 9px; right: -22px;
+    padding: 3px 30px;
+    font-size: 7px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: #fff;
+    transform: rotate(40deg);
+    white-space: nowrap;
+  }
+  .ribbon-green  { background: #43A047; }
+  .ribbon-orange { background: #F57F17; }
+
+</style>
+</head>
+<body>
+
+<!-- ── PAGE LOADER ── -->
+<div id="pageLoader">
+  <img src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/logo/loader.gif"
+       alt="Loading...">
+</div>
+
+
+<!-- ═══════════════════════════════════
+     1. DARK TOP NAV  (Logo + Avatar only)
+═══════════════════════════════════ -->
+<nav class="top-nav">
+  <div class="top-nav-logo">
+    <img src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/logo/hw_header_white.svg"
+         alt="Altametrics Growth">
+  </div>
+  <div class="top-nav-avatar">
+    <img src="https://agcdn.altametrics.com/hw-img/PROD/agproductdemo/avatar.png" alt="User"
+         onerror="this.parentElement.innerHTML='<svg width=\'18\' height=\'18\' fill=\'none\' stroke=\'rgba(255,255,255,0.8)\' stroke-width=\'1.8\' viewBox=\'0 0 24 24\'><path d=\'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\'/><circle cx=\'12\' cy=\'7\' r=\'4\'/></svg>'">
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════
+     2. WHITE SUB-BAR  (My Apps | Search | Icons)
+═══════════════════════════════════ -->
+<div class="sub-bar">
+
+  <!-- My Apps -->
+  <div class="my-apps-btn">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+         stroke="#3D8EE0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+    <span>My Apps</span>
+  </div>
+
+  <!-- Search (centred) -->
+  <div class="sub-bar-search">
+    <div class="search-pill" id="searchPill">
+
+      <span class="s-icon">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.3"
+             stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </span>
+
+      <input id="searchInput" class="s-input" type="text"
+             placeholder="Search Apps..." autocomplete="off">
+
+      <!-- Apps | Menu toggle -->
+      <div class="s-toggle">
+        <div class="s-tog active" id="togApps" onclick="setMode('apps')">Apps</div>
+        <div class="s-tog"        id="togMenu" onclick="setMode('menu')">Menu</div>
+      </div>
+
+      <!-- Suggestions dropdown (Menu mode) -->
+      <div class="s-dropdown" id="sDropdown">
+        <div class="sd-panels" id="sdPanels">
+          <!-- Panel 1: menu results -->
+          <div class="sd-panel" id="sdMenuPanel"></div>
+          <!-- Panel 2: sites drill-down -->
+          <div class="sd-panel" id="sdSitesPanel">
+            <div class="sd-sites-head">
+              <button class="sd-back-btn" onclick="backToMenu()">&#8249;</button>
+              <span class="sd-sites-title" id="sdSitesTitle"></span>
+              <span class="sd-sites-app"   id="sdSitesApp"></span>
+            </div>
+            <div id="sdSitesList"></div>
+            <div class="sd-sites-footer">
+              <button class="sd-sites-footer-btn">Add More Sites</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right icons -->
+  <div class="sub-bar-icons">
+    <!-- Grid view -->
+    <div class="sb-icon">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9"
+           stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="7" height="7" rx="1.2"/>
+        <rect x="14" y="3" width="7" height="7" rx="1.2"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.2"/>
+        <rect x="14" y="14" width="7" height="7" rx="1.2"/>
+      </svg>
+    </div>
+    <!-- List view -->
+    <div class="sb-icon">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9"
+           stroke-linecap="round" viewBox="0 0 24 24">
+        <line x1="3" y1="6"  x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="15" y2="12"/>
+        <line x1="3" y1="18" x2="10" y2="18"/>
+      </svg>
+    </div>
+    <!-- Settings gear -->
+    <div class="sb-icon">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9"
+           stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06
+                 a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09
+                 A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83
+                 l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
+                 A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83
+                 l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09
+                 a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83
+                 l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09
+                 a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════
+     3. CONTENT
+═══════════════════════════════════ -->
+<div class="page">
+
+  <div class="welcome-row">
+    <div class="welcome">Welcome, <span>Product D</span></div>
+    <div class="date-str"><b>Wednesday</b> &nbsp; Jun 24, 2026</div>
+  </div>
+
+  <!-- App Grid -->
+  <div class="app-grid" id="appGrid">
+
+    <!-- ── Row 1 ── -->
+    <div class="tile tile-white" data-name="App Store" data-kw="app store market">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/common/svg/Appmarket_logo.svg"
+           alt="App Store">
+      <span class="tile-name">App Store</span>
+    </div>
+
+    <div class="tile" style="background:#4A90D9"
+         data-name="Zip Schedules" data-kw="schedule labor workforce">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/ZipSchedules_white.svg"
+           alt="">
+      <span class="tile-name">Zip Schedules</span>
+    </div>
+
+    <div class="tile" style="background:#4A90D9"
+         data-name="Zip Clock" data-kw="clock time punch attendance">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipclock_white.svg"
+           alt="">
+      <span class="tile-name">Zip Clock</span>
+    </div>
+
+    <div class="tile" style="background:#00BFA5"
+         data-name="Zip Forecasting" data-kw="forecast sales prediction">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/ZipForecast_white.svg"
+           alt="">
+      <span class="tile-name">Zip Forecasting</span>
+    </div>
+
+    <div class="tile" style="background:#64B5F6"
+         data-name="Zip POS DashBoard" data-kw="pos dashboard point sale">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipPosReports/svg/posReportsIcon.svg"
+           alt="">
+      <span class="tile-name">Zip POS DashBoard</span>
+    </div>
+
+    <div class="tile" style="background:#9575CD"
+         data-name="Zip Inventory" data-kw="inventory waste count receiving transfers">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipInventory/svg/zipInventory-white.svg"
+           alt="">
+      <span class="tile-name">Zip Inventory</span>
+    </div>
+
+    <div class="tile" style="background:#6A0DAD"
+         data-name="Supplier ordering" data-kw="supplier order purchase vendor">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipOrdering_white.svg"
+           alt="">
+      <span class="tile-name">Supplier ordering</span>
+    </div>
+
+    <div class="tile" style="background:#F57C00"
+         data-name="Zip Reporting" data-kw="reporting reports analytics">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipReporting_white.svg"
+           alt="">
+      <span class="tile-name">Zip Reporting</span>
+    </div>
+
+    <div class="tile" style="background:#880E4F"
+         data-name="Plum POS" data-kw="plum pos point sale">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/plumPOS/svg/plum_pos_logo_white.svg"
+           alt="">
+      <span class="tile-name">Plum POS</span>
+    </div>
+
+    <!-- ── Row 2 ── -->
+    <div class="tile" style="background:#00ACC1"
+         data-name="Zip Training LMS" data-kw="training lms learning management">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipLearning/svg/zlr_white.svg"
+           alt="">
+      <span class="tile-name">Zip Training LMS</span>
+    </div>
+
+    <div class="tile" style="background:#E65100"
+         data-name="Zip HACCP" data-kw="haccp food safety compliance temperature">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipHaccp_white.svg"
+           alt="">
+      <span class="tile-name">Zip HACCP</span>
+    </div>
+
+    <div class="tile" style="background:#2E7D32"
+         data-name="BI-Reporting" data-kw="bi reporting business intelligence">
+      <span class="ribbon ribbon-green">3 Months Free</span>
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/common/svg/xformityApp_logo.svg"
+           alt="">
+      <span class="tile-name">BI-Reporting</span>
+    </div>
+
+    <div class="tile" style="background:#7B1FA2"
+         data-name="Prep & Pull" data-kw="prep pull preparation kitchen recipe">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipPrepnPull/svg/prepPull_logo_white.svg"
+           alt="">
+      <span class="tile-name">Prep &amp; Pull</span>
+    </div>
+
+    <div class="tile" style="background:#1A237E"
+         data-name="Zip Digital Signage" data-kw="digital signage display menu board">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/digital-signage/svg/digitalSignage_app.svg"
+           alt="">
+      <span class="tile-name">Zip Digital Signage</span>
+    </div>
+
+    <div class="tile" style="background:#4527A0"
+         data-name="Zip Tunes" data-kw="tunes music audio">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/ptune/svg/ptune_logo_white.svg"
+           alt="">
+      <span class="tile-name">Zip Tunes</span>
+    </div>
+
+    <div class="tile" style="background:#1A237E"
+         data-name="Zip Surveillance" data-kw="surveillance security camera monitor">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/surveillance/svg/psuvi_plum.svg"
+           alt="">
+      <span class="tile-name">Zip Surveillance</span>
+    </div>
+
+    <div class="tile" style="background:#29B6F6"
+         data-name="AI Dashboard" data-kw="ai dashboard artificial intelligence insights">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/hwAiInsight/svg/aidash_white.svg"
+           alt="">
+      <span class="tile-name">AI Dashboard</span>
+    </div>
+
+    <div class="tile" style="background:#42A5F5"
+         data-name="Zip Reports" data-kw="zip reports analytics data">
+      <span class="ribbon ribbon-orange" style="font-size:6px;">Reporting 2.0</span>
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/hwBiApp/svg/z_reports_white.svg"
+           alt="">
+      <span class="tile-name">Zip Reports</span>
+    </div>
+
+    <!-- ── Row 3 ── -->
+    <div class="tile" style="background:#1A237E"
+         data-name="Workflow" data-kw="workflow automation process task">
+      <img class="icon"
+           src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipWorkflow/svg/Workflow_white.svg"
+           alt="">
+      <span class="tile-name">Workflow</span>
+    </div>
+
+  </div><!-- /app-grid -->
+</div><!-- /page -->
+
+
+<script>
+/* ────────────────── DATA ────────────────── */
+const SITES = [
+  { name:"Famous Dave's Hayward #3205",    addr:"790 W Winton Ave, Hayward" },
+  { name:"Famous Dave's San Jose #3156",   addr:"61 Curtner Ave, San Jose" },
+  { name:"Demo Store",                      addr:"11470 Fourth St, Rancho Cucamonga" },
+  { name:"Famous Dave's Redlands #3135",   addr:"27500 W Lugonia Ave, Redlands" },
+  { name:"Famous Dave's Fresno #3105",     addr:"7603 N Blackstone Ave, Fresno" },
+  { name:"Sales Demo Store",               addr:"123 Main St, Los Angeles" },
+  { name:"Famous Dave's Oakland #3210",    addr:"2050 Telegraph Ave, Oakland" },
+  { name:"Famous Dave's Sacramento #3180", addr:"4560 Florin Rd, Sacramento" },
+];
+
+// [menuName, appName, color, iconUrl]
+const MENUS = [
+  ["Waste",              "Zip Inventory",    "#9575CD","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipInventory/svg/zipInventory-white.svg"],
+  ["Count",              "Zip Inventory",    "#9575CD","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipInventory/svg/zipInventory-white.svg"],
+  ["Receiving",          "Zip Inventory",    "#9575CD","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipInventory/svg/zipInventory-white.svg"],
+  ["Transfers",          "Zip Inventory",    "#9575CD","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipInventory/svg/zipInventory-white.svg"],
+  ["Purchase Orders",    "Zip Inventory",    "#9575CD","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipInventory/svg/zipInventory-white.svg"],
+  ["Item Management",    "Zip Inventory",    "#9575CD","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipInventory/svg/zipInventory-white.svg"],
+  ["Inventory Reports",  "Zip Inventory",    "#9575CD","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipInventory/svg/zipInventory-white.svg"],
+  ["Schedule",           "Zip Schedules",    "#4A90D9","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/ZipSchedules_white.svg"],
+  ["Time Off Requests",  "Zip Schedules",    "#4A90D9","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/ZipSchedules_white.svg"],
+  ["Availability",       "Zip Schedules",    "#4A90D9","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/ZipSchedules_white.svg"],
+  ["Labor Cost",         "Zip Schedules",    "#4A90D9","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/ZipSchedules_white.svg"],
+  ["Shift Swap",         "Zip Schedules",    "#4A90D9","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/ZipSchedules_white.svg"],
+  ["Open Shifts",        "Zip Schedules",    "#4A90D9","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/ZipSchedules_white.svg"],
+  ["Clock In / Out",     "Zip Clock",        "#4A90D9","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipclock_white.svg"],
+  ["Time Cards",         "Zip Clock",        "#4A90D9","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipclock_white.svg"],
+  ["Overtime Alerts",    "Zip Clock",        "#4A90D9","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipclock_white.svg"],
+  ["Break Management",   "Zip Clock",        "#4A90D9","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipclock_white.svg"],
+  ["Payroll Export",     "Zip Clock",        "#4A90D9","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipclock_white.svg"],
+  ["Sales Forecast",     "Zip Forecasting",  "#00BFA5","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/ZipForecast_white.svg"],
+  ["Labor Forecast",     "Zip Forecasting",  "#00BFA5","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/ZipForecast_white.svg"],
+  ["Weather Impact",     "Zip Forecasting",  "#00BFA5","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/ZipForecast_white.svg"],
+  ["New Order",          "Supplier ordering","#6A0DAD","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipOrdering_white.svg"],
+  ["Order History",      "Supplier ordering","#6A0DAD","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipOrdering_white.svg"],
+  ["Vendors",            "Supplier ordering","#6A0DAD","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipOrdering_white.svg"],
+  ["Invoices",           "Supplier ordering","#6A0DAD","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipOrdering_white.svg"],
+  ["Sales Reports",      "Zip Reporting",    "#F57C00","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipReporting_white.svg"],
+  ["Labor Reports",      "Zip Reporting",    "#F57C00","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipReporting_white.svg"],
+  ["Custom Reports",     "Zip Reporting",    "#F57C00","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipReporting_white.svg"],
+  ["Food Safety Checks", "Zip HACCP",        "#E65100","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipHaccp_white.svg"],
+  ["Temperature Logs",   "Zip HACCP",        "#E65100","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipHaccp_white.svg"],
+  ["Compliance Reports", "Zip HACCP",        "#E65100","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/account/svg/zipHaccp_white.svg"],
+  ["Prep List",          "Prep & Pull",      "#7B1FA2","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipPrepnPull/svg/prepPull_logo_white.svg"],
+  ["Pull Sheet",         "Prep & Pull",      "#7B1FA2","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipPrepnPull/svg/prepPull_logo_white.svg"],
+  ["Recipe Management",  "Prep & Pull",      "#7B1FA2","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipPrepnPull/svg/prepPull_logo_white.svg"],
+  ["My Tasks",           "Workflow",         "#1A237E","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipWorkflow/svg/Workflow_white.svg"],
+  ["Create Workflow",    "Workflow",         "#1A237E","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipWorkflow/svg/Workflow_white.svg"],
+  ["Approvals",          "Workflow",         "#1A237E","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipWorkflow/svg/Workflow_white.svg"],
+  ["My Courses",         "Zip Training LMS", "#00ACC1","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipLearning/svg/zlr_white.svg"],
+  ["Assign Training",    "Zip Training LMS", "#00ACC1","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipLearning/svg/zlr_white.svg"],
+  ["Certifications",     "Zip Training LMS", "#00ACC1","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipLearning/svg/zlr_white.svg"],
+  ["Daily Sales",        "Zip POS DashBoard","#64B5F6","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipPosReports/svg/posReportsIcon.svg"],
+  ["Transaction History","Zip POS DashBoard","#64B5F6","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipPosReports/svg/posReportsIcon.svg"],
+  ["Void & Comps",       "Zip POS DashBoard","#64B5F6","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/zipPosReports/svg/posReportsIcon.svg"],
+  ["AI Insights",        "AI Dashboard",     "#29B6F6","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/hwAiInsight/svg/aidash_white.svg"],
+  ["Recommendations",    "AI Dashboard",     "#29B6F6","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/hwAiInsight/svg/aidash_white.svg"],
+  ["Trends",             "AI Dashboard",     "#29B6F6","https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/hwAiInsight/svg/aidash_white.svg"],
+];
+
+/* ────────────────── STATE ────────────────── */
+let mode = 'apps';
+
+/* ────────────────── MODE ────────────────── */
+function setMode(m) {
+  if (m === 'menu' && mode !== 'menu') {
+    showModeLoader(() => applyMode('menu'));
+  } else {
+    applyMode(m);
+  }
+}
+
+function applyMode(m) {
+  mode = m;
+  document.getElementById('togApps').classList.toggle('active', m === 'apps');
+  document.getElementById('togMenu').classList.toggle('active', m === 'menu');
+  const inp = document.getElementById('searchInput');
+  inp.placeholder = m === 'apps' ? 'Search Apps...' : 'Search Menu...';
+  inp.value = '';
+  closeDropdown();
+  if (m === 'apps') showAll();
+}
+
+function showModeLoader(callback) {
+  const loader = document.getElementById('pageLoader');
+  loader.style.display = 'flex';
+  loader.style.opacity = '1';
+  loader.classList.remove('fade-out');
+  setTimeout(() => {
+    callback();
+    loader.classList.add('fade-out');
+    setTimeout(() => { loader.style.display = 'none'; }, 200);
+  }, 150);
+}
+
+/* ────────────────── APP FILTER ────────────────── */
+function showAll() {
+  document.querySelectorAll('.tile').forEach(t => t.classList.remove('hidden'));
+}
+
+function filterApps(q) {
+  if (!q.trim()) { showAll(); return; }
+  const lq = q.toLowerCase();
+  document.querySelectorAll('.tile').forEach(tile => {
+    const isStore = tile.dataset.name === 'App Store';
+    const match   = (tile.dataset.name + ' ' + (tile.dataset.kw || '')).toLowerCase().includes(lq);
+    tile.classList.toggle('hidden', !isStore && !match);
+  });
+}
+
+/* ────────────────── MENU FILTER ────────────────── */
+function filterMenu(q) {
+  const dd = document.getElementById('sDropdown');
+  if (!q.trim()) { closeDropdown(); return; }
+  const lq = q.toLowerCase();
+  const hits = MENUS.filter(([n,a]) => n.toLowerCase().includes(lq) || a.toLowerCase().includes(lq));
+
+  const panel = document.getElementById('sdMenuPanel');
+
+  if (!hits.length) {
+    panel.innerHTML = '<div style="padding:14px;text-align:center;color:#bbb;font-size:13px;">No results found</div>';
+    backToMenu();
+    dd.classList.add('open');
+    return;
+  }
+
+  panel.innerHTML = hits.map(([n,a,bg,ic]) => {
+    const safeN = n.replace(/"/g,'&quot;');
+    const safeA = a.replace(/"/g,'&quot;');
+    return `
+    <div class="sd-item"
+         data-menu="${safeN}" data-app="${safeA}"
+         onclick="showSitesPanel(this.dataset.menu, this.dataset.app)">
+      <div class="sd-dot" style="background:${bg}">
+        <img src="${ic}" alt="" onerror="this.style.display='none'">
+      </div>
+      <div class="sd-text">
+        <div class="sd-name">${n}</div>
+        <div class="sd-app">${a}</div>
+      </div>
+      <span class="sd-arr">›</span>
+    </div>`;
+  }).join('');
+
+  backToMenu();         // reset to panel 1 if we were on panel 2
+  dd.classList.add('open');
+  requestAnimationFrame(() => syncHeight('menu'));
+}
+
+function closeDropdown() {
+  document.getElementById('sDropdown').classList.remove('open');
+  backToMenu();
+}
+
+/* ────────────────── INPUT ────────────────── */
+document.getElementById('searchInput').addEventListener('input', function() {
+  mode === 'apps' ? filterApps(this.value) : filterMenu(this.value);
+});
+
+document.addEventListener('click', function(e) {
+  if (!document.getElementById('searchPill').contains(e.target)) {
+    closeDropdown();
+  }
+});
+
+/* ────────────────── SITES DRILL-DOWN ────────────────── */
+function showSitesPanel(menuName, appName) {
+  document.getElementById('sdSitesTitle').textContent = menuName;
+  document.getElementById('sdSitesApp').textContent   = appName;
+  renderSitesInPanel(SITES);
+  document.getElementById('sdPanels').classList.add('show-sites');
+  requestAnimationFrame(() => syncHeight('sites'));
+}
+
+function backToMenu() {
+  document.getElementById('sdPanels').classList.remove('show-sites');
+  requestAnimationFrame(() => syncHeight('menu'));
+}
+
+function syncHeight(panel) {
+  const dd  = document.getElementById('sDropdown');
+  const el  = document.getElementById(panel === 'sites' ? 'sdSitesPanel' : 'sdMenuPanel');
+  dd.style.maxHeight = Math.min(320, el.offsetHeight) + 'px';
+}
+
+function renderSitesInPanel(list) {
+  const el = document.getElementById('sdSitesList');
+  el.innerHTML = list.map(s => `
+    <div class="sd-site-item">
+      <div class="sd-site-icon">
+        <img src="https://agcdn.altametrics.com/releaseHubWorks/agassets/v3/assets/images/common/svg/site_location_iconSVG_gray.svg"
+             alt="" onerror="this.style.display='none'">
+      </div>
+      <div>
+        <div class="sd-site-name">${s.name}</div>
+        <div class="sd-site-addr">${s.addr}</div>
+      </div>
+    </div>`).join('');
+}
+/* ── LOADER ── */
+window.addEventListener('load', function () {
+  const loader = document.getElementById('pageLoader');
+  setTimeout(() => {
+    loader.classList.add('fade-out');
+    setTimeout(() => { loader.style.display = 'none'; }, 420);
+  }, 300);
+});
+</script>
+</body>
+</html>
